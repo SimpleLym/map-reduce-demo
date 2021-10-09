@@ -1,4 +1,4 @@
-package com.lee.mr.split;
+package com.lee.mr.common.split;
 
 import java.util.List;
 

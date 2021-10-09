@@ -2,7 +2,7 @@
  * @author ：lym
  * @date ：Created in 2021/6/18 13:48
  */
-package com.lee.mr.split;
+package com.lee.mr.common.split;
 
 public class InputSplit {
     String filePath;

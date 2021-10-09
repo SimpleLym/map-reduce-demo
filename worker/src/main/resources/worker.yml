@@ -1,0 +1,5 @@
+master:
+  url: 127.0.0.1:8000
+map-out-dir: D:\workspace\6.824\map\out
+server:
+  port: 9001

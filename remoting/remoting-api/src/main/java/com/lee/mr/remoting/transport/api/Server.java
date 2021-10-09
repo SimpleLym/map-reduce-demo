@@ -4,5 +4,4 @@ public interface Server {
     void openServer();
     void close();
     void send();
-    void receive();
 }

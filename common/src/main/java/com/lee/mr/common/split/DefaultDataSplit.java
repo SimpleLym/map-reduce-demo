@@ -2,7 +2,7 @@
  * @author ：lym
  * @date ：Created in 2021/6/18 14:12
  */
-package com.lee.mr.split;
+package com.lee.mr.common.split;
 
 import java.io.File;
 import java.io.FilenameFilter;
