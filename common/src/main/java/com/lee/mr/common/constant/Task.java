@@ -5,15 +5,15 @@ import java.util.UUID;
 public class Task {
     String id;
     String type;
-    String filePath;
+    String[] filePaths;
 
     public Task() {
     }
 
-    public Task(String type, String filePath) {
+    public Task(String type, String[] filePaths) {
         this.id = UUID.randomUUID().toString();
         this.type = type;
-        this.filePath = filePath;
+        this.filePaths = filePaths;
     }
 
     public String getId() {
@@ -32,11 +32,11 @@ public class Task {
         this.type = type;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String[] getFilePaths() {
+        return filePaths;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setFilePaths(String[] filePaths) {
+        this.filePaths = filePaths;
     }
 }

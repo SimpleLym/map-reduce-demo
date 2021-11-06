@@ -28,10 +28,7 @@ public class Master {
         SocketAddress bindAddress = getBindAddress();
         String[] workersUrl = getWorkersUrl();
         MRCluster cluster = new MRCluster();
-        MasterChannelHandler channelHandler = new MasterChannelHandler(workersUrl,cluster,cl->{
-            Queue<Task> splitTasks = getSplitTasks();
-            cl.dispatch(splitTasks);
-        });
+        MasterChannelHandler channelHandler = new MasterChannelHandler(workersUrl,cluster);
         Server server = new NettyServer(bindAddress,channelHandler);
         server.openServer();
     }
@@ -57,15 +54,5 @@ public class Master {
         return s.toArray(new String[s.size()]);
     }
 
-    private Queue<Task> getSplitTasks(){
-        Yaml yaml = new Yaml();
-        Map<String,Object> map = yaml.loadAs(this.getClass().getResourceAsStream("/mapreduce.yml"),Map.class);
-        String s = ((String)map.get("file-dir"));
-        IDataSplit dataSplit = new DefaultDataSplit(s);
-        List<InputSplit> splits = dataSplit.getSplits();
-        List<Task> tasks = splits.stream().map(i -> new Task("map", i.getFilePath())).collect(Collectors.toList());
-        Queue queue = new LinkedBlockingQueue();
-        queue.addAll(tasks);
-        return queue;
-    }
+
 }

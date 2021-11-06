@@ -1,24 +1,32 @@
 package com.lee.mr.worker;
 
+import com.lee.mr.common.util.CommonUtil;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class Mapper {
     ExecutorService executorService;
+    Map<String,Object> map;
+    int workPort;
     public Mapper() {
+        Yaml yaml = new Yaml();
+        map = yaml.loadAs(this.getClass().getResourceAsStream("/worker.yml"),Map.class);
+        Map<String, Integer> server = (Map<String, Integer>) map.get("server");
+        workPort = server.get("port");
+
         this.executorService = Executors.newFixedThreadPool(4, new ThreadFactory() {
             AtomicInteger atomicInteger = new AtomicInteger(0);
             @Override
@@ -27,64 +35,75 @@ public class Mapper {
             }
         });
     }
-    volatile boolean isRunning = false;
-    public void map(String path, Consumer<String> consumer){
-        CompletableFuture<List<String>> future = new CompletableFuture();
-        Yaml yaml = new Yaml();
-        Map<String,Object> map = yaml.loadAs(this.getClass().getResourceAsStream("/worker.yml"),Map.class);
-        Map<String, Integer> server = (Map<String, Integer>) map.get("server");
-        int workPort = server.get("port");
-        InetAddress ip4 = null;
-        try {
-            ip4 = Inet4Address.getLocalHost();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        String outDir = (String)map.get("map-out-dir");
-        InetAddress finalIp = ip4;
-        executorService.execute(() -> {
-            isRunning = true;
+    AtomicBoolean isRunning = new AtomicBoolean();
+    public void map(String[] paths, Consumer<String> consumer){
+        //executorService.execute(() -> {
+            isRunning.set(true);
             Map<String,BufferedWriter> writerMap = new HashMap<>();
+            String outDir = (String)map.get("map-out-dir");
+            outDir = CommonUtil.getPathByCurrentIp(outDir,WorkerClient.clientUrlStr);
             try {
                 Map<String,Integer> words = new HashMap<>();
-                BufferedReader reader = new BufferedReader(new FileReader(new File(path)));
-                String line = "";
-                while((line=reader.readLine())!=null){
-                    getWords(words,line);
-                }
-                if(finalIp !=null){
-                    String hostAddress = finalIp.getHostAddress();
-                    for (Map.Entry<String,Integer> entry:words.entrySet()){
-                        String word = entry.getKey();
-                        String first = word.substring(0, 1);
-                        String filePath = outDir + File.separator + hostAddress + "-" + first.toUpperCase()+".txt";
-                        File out = new File(filePath);
-                        BufferedWriter writer = null;
-                        if(out.exists()){
-                            writer = writerMap.get(filePath);
-                        }else {
-                            writer = new BufferedWriter(new FileWriter(out));
+                for (String path:paths) {
+                    File file = new File(path);
+                    BufferedReader reader = new BufferedReader(new FileReader(file));
+                    String line = "";
+                    while ((line = reader.readLine()) != null) {
+                        getWords(words, line);
+                    }
+                    String dir = outDir;
+                    if(!new File(dir).exists()){
+                        new File(dir).mkdir();
+                    }
+                    String hostAddress = WorkerClient.clientUrlStr;
+                    if (hostAddress != null) {
+                        dir = dir + File.separator + file.getName();
+                        File directory = new File(dir);
+                        if (!directory.exists()) {
+                            directory.mkdir();
                         }
-                        writerMap.putIfAbsent(filePath,writer);
-                        writer.write(word+" "+entry.getValue()+"\n");
-                        writer.flush();
+                        for (Map.Entry<String, Integer> entry : words.entrySet()) {
+                            String word = entry.getKey();
+                            String first = word.substring(0, 1);
+                            String filePath = dir + File.separator + hostAddress.replaceAll(":","#") + "-" + first.toUpperCase() + ".txt";
+                            File out = new File(filePath);
+                            BufferedWriter writer = writerMap.get(filePath);
+                            if (writer == null) {
+                                writer = new BufferedWriter(new FileWriter(out));
+                            }
+                            writerMap.putIfAbsent(filePath, writer);
+                            writer.write(word + " " + entry.getValue() + "\n");
+                            writer.flush();
+                        }
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }finally {
-                isRunning = false;
+                isRunning.set(false);
+                writerMap.forEach((k,w)->{
+                    if(w!=null){
+                        try {
+                            w.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                writerMap.clear();
+                System.out.println(Arrays.toString(paths)+" task finish!");
                 consumer.accept(outDir);
             }
-        });
+        //});
     }
 
     public boolean isRunning(){
-        return isRunning;
+        return isRunning.get();
     }
 
     private void getWords(Map<String,Integer> map,String line){
         char[] chars = line.trim().toCharArray();
+        line = line.trim();
         int start = 0;
         for (int i=0;i<chars.length;i++){
             while (i<chars.length&&!isCharacter(chars[i])){
@@ -109,12 +128,13 @@ public class Mapper {
         }
     }
 
-    private boolean isCharacter(char c){
-        /*if(c==' '||c=='\t'||c=='\n'||c=='\r'){
-            return true;
-        }*/
+    private static boolean isCharacter(char c){
         if((c>='a'&&c<='z')||(c>='A'&&c<='Z'))
             return true;
         return false;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(isCharacter(','));
     }
 }

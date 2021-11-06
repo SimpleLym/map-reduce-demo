@@ -7,7 +7,7 @@ import com.lee.mr.common.constant.Task;
 public class ClusterInvoker implements Invoker {
 
     @Override
-    public void invoker(ClientProxy client, Task task) {
+    public void invoke(ClientProxy client, Task task) {
         if(client.isAlive()){
             JSONObject json = new JSONObject();
             json.put("task",task);

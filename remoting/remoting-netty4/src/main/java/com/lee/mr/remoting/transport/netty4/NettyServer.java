@@ -12,6 +12,8 @@ import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.codec.Delimiters;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 
 import java.net.SocketAddress;
 
@@ -33,6 +35,7 @@ public class NettyServer implements Server {
         workerGroup = new NioEventLoopGroup();
         bootstrap.group(bossGroup,workerGroup)
                 .channel(NioServerSocketChannel.class)
+                .handler(new LoggingHandler(LogLevel.INFO))
                 .option(ChannelOption.SO_REUSEADDR,true)
                 .childOption(ChannelOption.TCP_NODELAY,true)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
@@ -41,7 +44,7 @@ public class NettyServer implements Server {
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();
-                        pipeline.addLast("framer", new DelimiterBasedFrameDecoder(8192, Delimiters.lineDelimiter()));
+                        pipeline.addLast("framer", new DelimiterBasedFrameDecoder(81920, Delimiters.lineDelimiter()));
                         pipeline.addLast("decoder", new StringDecoder());
                         pipeline.addLast("encoder", new StringEncoder());
                         pipeline.addLast(new NettyServerHandler(channelHandler));

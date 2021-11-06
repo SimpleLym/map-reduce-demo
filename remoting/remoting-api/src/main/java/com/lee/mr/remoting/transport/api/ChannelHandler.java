@@ -7,4 +7,5 @@ public interface ChannelHandler {
     void received(ChannelHandlerContext ctx,String msg);
     void send(ChannelHandlerContext ctx, String msg);
     void register(ChannelHandlerContext ctx);
+    void channelActive(ChannelHandlerContext ctx);
 }
