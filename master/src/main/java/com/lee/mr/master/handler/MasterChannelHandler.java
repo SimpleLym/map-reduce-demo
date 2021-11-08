@@ -36,7 +36,7 @@ public class MasterChannelHandler implements ChannelHandler {
         //this.map = new ConcurrentHashMap<>();
         this.cluster = cluster;
         tasks = getSplitTasks();
-        MasterEventLoop masterEventLoop = new MasterEventLoop(tasks, cluster);
+        MasterEventLoop masterEventLoop = new MasterEventLoop(tasks, cluster,this.workersUrl);
         masterEventLoop.loop();
     }
 

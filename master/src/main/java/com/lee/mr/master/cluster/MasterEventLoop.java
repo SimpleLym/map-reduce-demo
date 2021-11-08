@@ -14,11 +14,12 @@ public class MasterEventLoop implements EventLoop {
     ExecutorService executor;
     Queue<Task> tasks;
     Cluster cluster;
-
-    public MasterEventLoop(Queue<Task> tasks, Cluster cluster) {
+    String[] workersUrl;
+    public MasterEventLoop(Queue<Task> tasks, Cluster cluster,String[] workersUrl) {
         executor = Executors.newSingleThreadExecutor();
         this.tasks = tasks;
         this.cluster = cluster;
+        this.workersUrl = workersUrl;
     }
     @Override
     public void loop() {
@@ -26,8 +27,7 @@ public class MasterEventLoop implements EventLoop {
         executor.execute(() -> {
             while (true) {
                 if (tasks != null && !tasks.isEmpty()) {
-                    //if (cluster.size() > 0) {
-                    if (cluster.size() == 2) {
+                    if (cluster.size() == this.workersUrl.length) {
                         cluster.dispatch(tasks);
                     }
                 }
