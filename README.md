@@ -1,1 +1,1 @@
-# map-reduce-pro
+# 此项目为mapreduce 简单demo
